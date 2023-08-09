@@ -31,6 +31,13 @@ public class Transaction {
 	}
 	
 	
+	public Transaction(Date tdate, int tentree, float tprixtotal, Produit tprod, Fournisseur tfourn) {
+		Tdate = tdate;
+		Tentree = tentree;
+		Tprixtotal = tprixtotal;
+		Tprod = tprod;
+		Tfourn = tfourn;
+	}
 	public Transaction(int tid2, java.util.Date tdate2, int tentree2, float tprixtotal2, int tprodId, int tfournId) {
 		Tid = tid2;
 		Tdate = (Date) tdate2;
@@ -39,6 +46,15 @@ public class Transaction {
 		 this.Tprod = new Produit(tprodId);
 	        this.Tfourn = new Fournisseur(tfournId);
 	}
+	public Transaction(java.util.Date tdate2, int tentree2, float tprixtotal2, Produit produit,
+			Fournisseur fournisseur) {
+		Tdate = (Date) tdate2;
+		Tentree = tentree2;
+		Tprixtotal = tprixtotal2;
+		Tprod = produit;
+		Tfourn = fournisseur;	
+		}
+	
 	public int getTid() {
 		return Tid;
 	}

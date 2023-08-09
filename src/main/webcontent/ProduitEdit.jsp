@@ -67,6 +67,32 @@
             max-height: 100px;
         }
     </style>
+    
+     <!-- Include jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+    $(document).ready(function() {
+        // Show/hide the text fields based on "Other" checkbox selection
+        $("input[name='tailleOther']").change(function() {
+            if ($(this).is(":checked")) {
+                $("input[name='tailleOtherValue']").show();
+            } else {
+                $("input[name='tailleOtherValue']").hide();
+            }
+        });
+        
+        $("input[name='couleurOther']").change(function() {
+            if ($(this).is(":checked")) {
+                $("input[name='couleurOtherValue']").show();
+            } else {
+                $("input[name='couleurOtherValue']").hide();
+            }
+        });
+    });
+    </script>
+
+
 </head>
 <body>
     <h2>Modifier un produit</h2>
@@ -98,11 +124,24 @@
         <label>Quantité du produit:</label>
         <input type="number" name="prodquant" value="<%= p.getProdquant() %>">
         
-        <label>Tailles (séparées par des virgules):</label>
-        <input type="text" name="taille" value="<%= p.getTaille() %>">
-        
-        <label>Couleurs (séparées par des virgules):</label>
-        <input type="text" name="couleur" value="<%= p.getCouleur() %>">
+     <label>Tailles:</label>
+		<c:forEach var="size" items="${tailleOptions}">
+    	<input type="checkbox" name="taille" value="${size}" ${produit.getTaille().contains(size) ? 'checked' : ''}> ${size}<br>
+		</c:forEach>
+		<input type="checkbox" name="tailleOther" value="other"> Other
+		<input type="text" name="tailleOtherValue" style="display: none;">
+		<br><br>
+
+		<label>Couleurs:</label>
+		<c:forEach var="color" items="${couleurOptions}">
+		    <input type="checkbox" name="couleur" value="${color}" ${produit.getCouleur().contains(color) ? 'checked' : ''}> ${color}<br>
+		</c:forEach>
+		<input type="checkbox" name="couleurOther" value="other"> Other
+		<input type="text" name="couleurOtherValue" style="display: none;">
+		<br>
+		<br>
+
+
 
         <label>Catégorie:</label>
         <select name="prodcat">
@@ -122,3 +161,4 @@
     </form>
 </body>
 </html>
+

@@ -120,7 +120,6 @@
             </th>
         </tr>
     <tr>
-        <th>ID</th>
         <th>Nom</th>
         <th>Téléphone</th>
         <th>Adresse</th>
@@ -131,7 +130,6 @@
     <% if (fournisseurs != null && !fournisseurs.isEmpty()) { %>
         <% for (Fournisseur fournisseur : fournisseurs) { %>
             <tr>
-                <td><%= fournisseur.getFid() %></td>
                 <td><%= fournisseur.getFnom() %></td>
                 <td><%= fournisseur.getFtel() %></td>
                 <td><%= fournisseur.getFadresse() %></td>

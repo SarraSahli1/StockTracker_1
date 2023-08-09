@@ -122,19 +122,51 @@
 </head>
 <body>
     <div class="content">
-        <div class="filter-section">
+       <div class="filter-section">
     <h3>Filter Options</h3>
     <form action="ProduitServlet" method="get">
-        <input type="hidden" name="action" value="filter">
-        <label for="filterTaille">Filter by Size:</label>
-        <select id="filterTaille" name="filterTaille">
-            <option value="">All</option>
-            <c:forEach items="${sizes}" var="size">
-                <option value="${size}">${size}</option>
-            </c:forEach>
-        </select>
-        <button type="submit">Apply Filter</button>
-    </form>
+    <label>Prix minimum:</label> <input type="text" name="minPrice"><br>
+    <label>Prix maximum:</label> <input type="text" name="maxPrice"><br>
+    <input type="hidden" name="action" value="filterByPrice">
+    <input type="submit" value="Filtrer par prix">
+</form>
+<!-- Add the color filter form -->
+<form action="ProduitServlet" method="post">
+    <input type="hidden" name="action" value="filterByColor">
+    <label for="color">Filtrer par couleur:</label>
+    <select name="color" id="color">
+        <option value="" selected>Toutes les couleurs</option>
+        <c:forEach var="color" items="${couleurOptions}">
+            <option value="${color}">${color}</option>
+        </c:forEach>
+    </select>
+    <button type="submit">Filtrer</button>
+</form>
+
+<!-- Add the taille filter form -->
+<form action="ProduitServlet" method="post">
+    <input type="hidden" name="action" value="filterByTaille">
+    <label for="taille">Filtrer par couleur:</label>
+    <select name="taille" id="taille">
+        <option value="" selected>Toutes les tailles</option>
+        <c:forEach var="taille" items="${tailleOptions}">
+            <option value="${taille}">${taille}</option>
+        </c:forEach>
+    </select>
+    <button type="submit">Filtrer</button>
+</form>
+<form action="ProduitServlet" method="post">
+    <input type="hidden" name="action" value="filterByCategorie">
+    <label for="category">Filtrer par catégorie:</label>
+    <select name="categoryId" id="category">
+        <option value="" selected>Toutes les catégories</option>
+        <c:forEach var="category" items="${categories}">
+            <option value="${category.catid}">${category.catlib}</option>
+        </c:forEach>
+    </select>
+    <button type="submit">Filtrer</button>
+</form>
+
 </div>
 
         <div class="product-table">

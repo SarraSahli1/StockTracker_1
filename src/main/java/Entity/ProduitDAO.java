@@ -6,10 +6,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import Entity.Produit; // Import your entity class
 
+
 public class ProduitDAO {
+	
     private static String url = "jdbc:mysql://localhost:3306/stocktracker";
     private static String login = "root";
     private static String pwd = "";
@@ -31,7 +34,8 @@ public class ProduitDAO {
          }
          return cnx;
     }
-public void ajouterProduit(Produit produit) {
+    
+public void ajouterProduit(Produit produit,List<String> selectedTailles, List<String> selectedCouleurs) {
     Connection cnx = getConnection();
     
     try {
@@ -44,8 +48,8 @@ public void ajouterProduit(Produit produit) {
         pr.setInt(6, produit.getProdcat().getCatid());
 
         // Combine the sizes and colors into comma-separated strings
-        String tailleString = String.join(",", produit.getTaille());
-        String couleurString = String.join(",", produit.getCouleur());
+        String tailleString = String.join(",", selectedTailles);
+        String couleurString = String.join(",", selectedCouleurs);
         
         pr.setString(7, tailleString);
         pr.setString(8, couleurString);
@@ -100,8 +104,8 @@ public void deleteProduit(int id) {
         e.printStackTrace();
     }
 }
-public void modifierProduit(Produit produit) {
-    Connection cnx = getConnection(); // You need to implement this method to get a database connection
+public void modifierProduit(Produit produit, List<String> taille, List<String> couleur) {
+    Connection cnx = getConnection();
     
     try {
         String query = "UPDATE produit SET prodlib=?, proddesc=?, prodimg=?, prodprix=?, prodquant=?, prodcat=?, taille=?, couleur=? WHERE prodid=?";
@@ -115,8 +119,8 @@ public void modifierProduit(Produit produit) {
         pr.setInt(6, produit.getProdcat().getCatid());
 
         // Combine the sizes and colors into comma-separated strings
-        String tailleString = String.join(",", produit.getTaille());
-        String couleurString = String.join(",", produit.getCouleur());
+        String tailleString = String.join(",", taille);
+        String couleurString = String.join(",", couleur);
         
         pr.setString(7, tailleString);
         pr.setString(8, couleurString);
@@ -127,7 +131,6 @@ public void modifierProduit(Produit produit) {
     } catch (SQLException e) {
         e.printStackTrace();
     }    
-
 }
 
 public Produit getProduitById(int id) {
@@ -200,5 +203,220 @@ public List<Produit> searchProducts(String searchQuery) {
     return products;
 }
 
+public List<Produit> filterProduitsByPrice(float minPrice, float maxPrice) {
+    List<Produit> filteredProduits = new ArrayList<>();
+    Connection cnx = getConnection();
+
+    try {
+        PreparedStatement pr = cnx.prepareStatement("SELECT * FROM Produit WHERE prodprix BETWEEN ? AND ?");
+
+        pr.setFloat(1, minPrice);
+        pr.setFloat(2, maxPrice);
+        ResultSet rs = pr.executeQuery();
+
+        while (rs.next()) {
+        	int prodId = rs.getInt("prodid");
+            String prodlib = rs.getString("prodlib");
+            String proddesc = rs.getString("proddesc");
+            String prodimg = rs.getString("prodimg");
+            float prodprix = rs.getFloat("prodprix");
+            int prodquant = rs.getInt("prodquant");
+            int prodcatId = rs.getInt("prodcat");
+            String tailleString = rs.getString("taille");
+            String couleurString = rs.getString("couleur");
+            
+            // Convert sizes and colors from comma-separated strings to lists
+            List<String> taille = Arrays.asList(tailleString.split(","));
+            List<String> couleur = Arrays.asList(couleurString.split(","));
+            
+            CategorieDAO categorieDAO = new CategorieDAO();
+            Categorie categorie = categorieDAO.getCategoryById(prodcatId);
+
+            Produit product = new Produit(prodId, prodlib, proddesc,prodimg, prodprix, prodquant, taille, couleur, categorie);
+            filteredProduits.add(product);
+        }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+
+    return filteredProduits;
+
+}
+
+//ProduitDAO.java
+public List<Produit> filterProduitsByColor(List<String> selectedColors) {
+    List<Produit> filteredProduits = new ArrayList<>();
+    Connection cnx = getConnection();
+
+    try {
+        String selectedColorsString = String.join(",", selectedColors);
+        PreparedStatement pr = cnx.prepareStatement("SELECT * FROM Produit WHERE FIND_IN_SET(?, couleur) > 0");
+        pr.setString(1, selectedColorsString);
+
+        ResultSet rs = pr.executeQuery();
+
+        while (rs.next()) {
+            int prodId = rs.getInt("prodid");
+            String prodlib = rs.getString("prodlib");
+            String proddesc = rs.getString("proddesc");
+            String prodimg = rs.getString("prodimg");
+            float prodprix = rs.getFloat("prodprix");
+            int prodquant = rs.getInt("prodquant");
+            int prodcatId = rs.getInt("prodcat");
+            String tailleString = rs.getString("taille");
+            String couleurString = rs.getString("couleur");
+            
+            // Convert sizes and colors from comma-separated strings to lists
+            List<String> taille = Arrays.asList(tailleString.split(","));
+            List<String> couleur = Arrays.asList(couleurString.split(","));
+            
+            CategorieDAO categorieDAO = new CategorieDAO();
+            Categorie categorie = categorieDAO.getCategoryById(prodcatId);
+
+            Produit product = new Produit(prodId, prodlib, proddesc, prodimg, prodprix, prodquant, taille, couleur, categorie);
+            filteredProduits.add(product);
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    } 
+
+    return filteredProduits;
+}
+
+public List<String> getDistinctColors() {
+
+    List<String> couleurOptions = new ArrayList<>();
+    Connection cnx = getConnection();
+
+    try {
+        PreparedStatement pr = cnx.prepareStatement("SELECT couleur FROM produit");
+        ResultSet rs = pr.executeQuery();
+
+        while (rs.next()) {
+            String couleurList = rs.getString("couleur");
+            System.out.println("Raw Colors: " + couleurList);
+
+            List<String> colors = Arrays.asList(couleurList.split("\\s*,\\s*"));
+            System.out.println("Split Colors: " + colors);
+
+            for (String color : colors) {
+                if (!couleurOptions.contains(color)) {
+                    couleurOptions.add(color);
+                }
+            }
+        }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+
+    return couleurOptions;
+}
+
+public List<String> getDistinctTailles() {
+    List<String> tailleOptions = new ArrayList<>();
+    Connection cnx = getConnection();
+
+    try {
+        PreparedStatement pr = cnx.prepareStatement("SELECT taille FROM produit");
+        ResultSet rs = pr.executeQuery();
+
+        while (rs.next()) {
+            String tailleList = rs.getString("taille");
+            System.out.println("Raw taille: " + tailleList);
+
+            List<String> tailles = Arrays.asList(tailleList.split("\\s*,\\s*"));
+            System.out.println("Split taille: " + tailles);
+
+            for (String taille : tailles) {
+                if (!tailleOptions.contains(taille)) {
+                	tailleOptions.add(taille);
+                }
+            }
+        }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+
+    return tailleOptions;
+}
+public List<Produit> filterProduitsByTaille(List<String> selectedTailles) {
+    List<Produit> filteredProduits = new ArrayList<>();
+    Connection cnx = getConnection();
+
+    try {
+        String selectedTaillesString = String.join(",", selectedTailles);
+        PreparedStatement pr = cnx.prepareStatement("SELECT * FROM Produit WHERE FIND_IN_SET(?, taille) > 0");
+        pr.setString(1, selectedTaillesString);
+
+        ResultSet rs = pr.executeQuery();
+
+        while (rs.next()) {
+            int prodId = rs.getInt("prodid");
+            String prodlib = rs.getString("prodlib");
+            String proddesc = rs.getString("proddesc");
+            String prodimg = rs.getString("prodimg");
+            float prodprix = rs.getFloat("prodprix");
+            int prodquant = rs.getInt("prodquant");
+            int prodcatId = rs.getInt("prodcat");
+            String tailleString = rs.getString("taille");
+            String couleurString = rs.getString("couleur");
+            
+            // Convert sizes and colors from comma-separated strings to lists
+            List<String> taille = Arrays.asList(tailleString.split(","));
+            List<String> couleur = Arrays.asList(couleurString.split(","));
+            
+            CategorieDAO categorieDAO = new CategorieDAO();
+            Categorie categorie = categorieDAO.getCategoryById(prodcatId);
+
+            Produit product = new Produit(prodId, prodlib, proddesc, prodimg, prodprix, prodquant, taille, couleur, categorie);
+            filteredProduits.add(product);
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    } 
+
+    return filteredProduits;
+}
+public List<Produit> filterProduitsByCategorie(int categoryId) {
+    List<Produit> filteredProduits = new ArrayList<>();
+    Connection cnx = getConnection();
+
+    try {
+        PreparedStatement pr = cnx.prepareStatement("SELECT * FROM Produit WHERE prodcat = ?");
+        pr.setInt(1, categoryId);
+
+        ResultSet rs = pr.executeQuery();
+
+        while (rs.next()) {
+            int prodId = rs.getInt("prodid");
+            String prodlib = rs.getString("prodlib");
+            String proddesc = rs.getString("proddesc");
+            String prodimg = rs.getString("prodimg");
+            float prodprix = rs.getFloat("prodprix");
+            int prodquant = rs.getInt("prodquant");
+            int prodcatId = rs.getInt("prodcat");
+            String tailleString = rs.getString("taille");
+            String couleurString = rs.getString("couleur");
+
+            // Convert sizes and colors from comma-separated strings to lists
+            List<String> taille = Arrays.asList(tailleString.split(","));
+            List<String> couleur = Arrays.asList(couleurString.split(","));
+
+            // Fetch the category using the CategorieDAO
+            CategorieDAO categorieDAO = new CategorieDAO();
+            Categorie categorie = categorieDAO.getCategoryById(prodcatId);
+
+            Produit product = new Produit(prodId, prodlib, proddesc, prodimg, prodprix, prodquant, taille, couleur, categorie);
+            filteredProduits.add(product);
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    } 
+
+    return filteredProduits;
+}
 
 }

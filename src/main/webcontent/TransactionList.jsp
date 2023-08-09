@@ -85,7 +85,7 @@ background-color: rgba(192, 192, 192, 0.1);
     border-radius: 4px;
     border: 0px solid #ccc;
         flex: 1; /* This will make the input expand to fill the available space */
-	width:900px;
+            width:800px;
 	height:30px;
 background-color: rgba(192, 192, 192, 0.1);	        	    
 }
@@ -102,10 +102,59 @@ background-color: rgba(192, 192, 192, 0.1);
     display: flex;
     justify-content: space-between;
 }
+.transaction-table {
+            flex: 4;
+            background-color: white;
+            border: 1px solid #dddddd;
+            border-radius: 8px;
+            padding: 20px;
+            height: 80vh; /* 80% of the viewport height */
+            overflow-y: auto;
+        }
+         .content {
+            display: flex;
+            align-items: flex-start;
+            margin: 20px;
+            width: 80%; /* Adjust the width of the content */
+        }
+        .filter-section {
+            flex: 1;
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #dddddd;
+            border-radius: 8px;
+            margin-right: 20px;
+            height: 80vh; /* 80% of the viewport height */
+            overflow-y: auto;
+        }
     </style>
     
 </head>
 <body>
+<div class="content">
+        <div class="filter-section">
+    <h3>Filter Options</h3>
+    <form action="TransactionServlet" method="get">
+    <label>Prix minimum:</label> <input type="text" name="minPrice"><br>
+    <label>Prix maximum:</label> <input type="text" name="maxPrice"><br>
+    <input type="hidden" name="action" value="filterByPrice">
+    <input type="submit" value="Filtrer par prix">
+</form>
+<div class="filter-section">
+    <h3>Date Range Filter</h3>
+    <form action="TransactionServlet" method="get">
+        <label>From:</label>
+        <input type="date" name="startDate"><br>
+        <label>To:</label>
+        <input type="date" name="endDate"><br>
+        <input type="hidden" name="action" value="filterByDate">
+        <input type="submit" value="Filter by Date">
+    </form>
+</div>
+
+
+</div>
+        <div class="transaction-table">
      <h3>Liste des transactions</h3>
    <div class="search-bar">
     <form action="TransactionServlet" method="get"> <!-- Change the action to the servlet -->
@@ -124,7 +173,6 @@ background-color: rgba(192, 192, 192, 0.1);
         </tr>
    
         <tr>
-            <th>ID</th>
             <th>Date</th>
             <th>Entrée</th>
             <th>Prix Total</th>
@@ -136,7 +184,6 @@ background-color: rgba(192, 192, 192, 0.1);
         <% List<Transaction> transactions = (List<Transaction>) request.getAttribute("transactions"); %>
         <% for (Transaction transaction : transactions) { %>
             <tr>
-                <td><%= transaction.getTid() %></td>
                 <td><%= transaction.getTdate() %></td>
                 <td><%= transaction.getTentree() %></td>
                 <td><%= transaction.getTprixtotal() %></td>
@@ -157,6 +204,31 @@ background-color: rgba(192, 192, 192, 0.1);
                 </td>
             </tr>
         <% } %>
+        <% List<Transaction> filteredTransactions = (List<Transaction>) request.getAttribute("filteredTransactions"); %>
+<% if (filteredTransactions != null) { %>
+    <% for (Transaction transaction : filteredTransactions) { %>
+        <tr>
+            <td><%= transaction.getTdate() %></td>
+            <td><%= transaction.getTentree() %></td>
+            <td><%= transaction.getTprixtotal() %></td>
+            <td><%= transaction.getTprod().getProdlib() %></td>
+            <td><%= transaction.getTfourn().getFnom() %></td>
+<td>
+                    <form action="TransactionServlet" method="post" style="display: inline;">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="id" value="<%= transaction.getTid() %>">
+    					<button type="submit" class="icon-button" title="Supprimer"><i class="fas fa-trash" style="color:#A51717"></i></button>
+                    </form>
+               
+                    <form action="TransactionServlet" method="get" style="display: inline;">
+                        <input type="hidden" name="action" value="TransactionEdit">
+                        <input type="hidden" name="id" value="<%= transaction.getTid() %>">
+    					<button type="submit" class="icon-button" title="Modifier"><i class="fas fa-pencil-alt"></i></button>
+                    </form>
+                </td>        </tr>
+    <% } %>
+<% } %>
+                
     </table>
 </body>
 </html>

@@ -58,14 +58,80 @@
             background-color: #E0B806;
         }
     </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+    $(document).ready(function() {
+        // Show/hide the text fields based on "Other" checkbox selection
+        $("input[name='tailleOther']").change(function() {
+            if ($(this).is(":checked")) {
+                $("input[name='tailleOtherValue']").show();
+            } else {
+                $("input[name='tailleOtherValue']").hide();
+            }
+        });
+        
+        $("input[name='couleurOther']").change(function() {
+            if ($(this).is(":checked")) {
+                $("input[name='couleurOtherValue']").show();
+            } else {
+                $("input[name='couleurOtherValue']").hide();
+            }
+        });
+    });
+    $("form").submit(function(event) {
+        var prodlib = $("input[name='prodlib']").val();
+        var proddesc = $("input[name='proddesc']").val();
+        var prodprix = $("input[name='prodprix']").val();
+        var prodquant = $("input[name='prodquant']").val();
+        var errorMessage = "";
+        
+        if (prodlib === "") {
+            errorMessage += "Libellé is required.<br>";
+        }
+        if (proddesc === "") {
+            errorMessage += "Description is required.<br>";
+        }
+        if (prodprix === "") {
+            errorMessage += "Prix is required.<br>";
+        }
+        if (prodquant === "") {
+            errorMessage += "Quantité is required.<br>";
+        }
+        if (errorMessage !== "") {
+            $("#errorMessages").html("<div class='error-message'>" + errorMessage + "</div>");
+            event.preventDefault();
+        } else {
+            $("#errorMessages").html(""); // Clear error messages if no errors
+        }
+    });
+});
+    </script>
 </head>
 <body>
     <h2>Ajouter un produit</h2>
+    
     <form action="ProduitServlet?action=ProduitAdd" method="post" enctype="multipart/form-data">
         <label>Libellé:</label> <input type="text" name="prodlib"><br>
-        <label>Description:</label> <input type="text" name="proddesc"><br>
-        <label>Tailles (séparées par des virgules):</label> <input type="text" name="taille"><br>
-        <label>Couleurs (séparées par des virgules):</label> <input type="text" name="couleur"><br>
+        <label>Description:</label> <input type="text" name="proddesc"><br><br>
+        
+       <label>Tailles:</label><br><br>
+		<c:forEach var="size" items="${tailleOptions}">
+		    <input type="checkbox" name="taille" value="${size}" /> ${size}
+		</c:forEach>
+		<input type="checkbox" name="tailleOther" value="other"> Other
+		<input type="text" name="tailleOtherValue" style="display: none;">
+		<br>
+		<br>
+		
+		<label>Couleurs:</label><br><br>
+		<c:forEach var="color" items="${couleurOptions}">
+		    <input type="checkbox" name="couleur" value="${color}" /> ${color}
+		</c:forEach>
+		 <input type="checkbox" name="couleurOther" value="other"> Other
+		<input type="text" name="couleurOtherValue" style="display: none;">
+		<br><br>
+
         <label>Prix:</label> <input type="text" name="prodprix"><br>
         <label>Quantité:</label> <input type="text" name="prodquant"><br>
         <label>Image:</label> <input type="file" name="prodimg"><br>
@@ -75,6 +141,7 @@
             <c:forEach var="categorie" items="${categories}">
                 <option value="${categorie.getCatid()}">${categorie.getCatlib()}</option>
             </c:forEach>
+           
         </select><br>
         <input type="submit" value="Ajouter">
     </form>

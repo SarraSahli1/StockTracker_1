@@ -196,6 +196,78 @@ public List<Transaction> searchByProductOrSupplier(String searchQuery) {
 
     return transactions;
 }
+public List<Transaction> filterTransactionsByPrice(float minPrice, float maxPrice) {
+    List<Transaction> filteredTransactions = new ArrayList<>();
+    Connection cnx = getConnection();
+
+    try {
+        PreparedStatement pr = cnx.prepareStatement("SELECT * FROM transaction WHERE Tprixtotal BETWEEN ? AND ?");
+
+        pr.setFloat(1, minPrice);
+        pr.setFloat(2, maxPrice);
+        ResultSet resultSet = pr.executeQuery();
+
+        while (resultSet.next()) {
+            int tid = resultSet.getInt("Tid");
+            Date tdate = resultSet.getDate("Tdate");
+            int tentree = resultSet.getInt("Tentree");
+            float tprixtotal = resultSet.getFloat("Tprixtotal");
+            int tprodId = resultSet.getInt("Tprod");
+            int tfournId = resultSet.getInt("Tfourn");
+            
+            Produit produit = new Produit();
+            produit.setProdid(tprodId);
+            
+            Fournisseur fournisseur = new Fournisseur();
+            fournisseur.setFid(tfournId);
+            
+            Transaction transaction = new Transaction(tid, tdate, tentree, tprixtotal, produit, fournisseur);
+            filteredTransactions.add(transaction);
+        }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+
+    return filteredTransactions;
+
+}
+public List<Transaction> filterTransactionsByDate(Date startDate, Date endDate) {
+    List<Transaction> filteredTransactions = new ArrayList<>();
+    Connection cnx = getConnection();
+
+    try {
+        PreparedStatement pr = cnx.prepareStatement("SELECT * FROM transaction WHERE Tdate BETWEEN ? AND ?");
+        pr.setDate(1, new java.sql.Date(startDate.getTime()));
+        pr.setDate(2, new java.sql.Date(endDate.getTime()));
+
+        ResultSet resultSet = pr.executeQuery();
+
+        while (resultSet.next()) {  // Move the cursor to the first row and iterate through the result set
+            int tid = resultSet.getInt("Tid");
+        	Date tdate = resultSet.getDate("Tdate");
+            int tentree = resultSet.getInt("Tentree");
+            float tprixtotal = resultSet.getFloat("Tprixtotal");
+            int tprodId = resultSet.getInt("Tprod");
+            int tfournId = resultSet.getInt("Tfourn");
+        
+            Produit produit = new Produit();
+            produit.setProdid(tprodId);
+        
+            Fournisseur fournisseur = new Fournisseur();
+            fournisseur.setFid(tfournId);
+        
+            Transaction transaction = new Transaction(tid,tdate, tentree, tprixtotal, produit, fournisseur);
+            filteredTransactions.add(transaction);
+        }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+
+    return filteredTransactions;
+}
+
 
     }
 

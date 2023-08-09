@@ -18,6 +18,7 @@ import Entity.Categorie;
 import Entity.CategorieDAO;
 import Entity.Produit;
 import Entity.ProduitDAO;
+import Entity.Transaction;
 
 @MultipartConfig
 public class ProduitServlet extends HttpServlet {
@@ -30,73 +31,126 @@ public class ProduitServlet extends HttpServlet {
         super();
         produitDAO = new ProduitDAO();
     }
-    
-protected void doGet(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException {
-    String action = request.getParameter("action");
-    String idParam = request.getParameter("id");
-    String searchQuery = request.getParameter("searchQuery"); // Add this line
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String action = request.getParameter("action");
+        String idParam = request.getParameter("id");
+        String searchQuery = request.getParameter("searchQuery");
 
-
-    if ("ProduitAdd".equals(action)) {
-        // Fetch the list of categories and set it as an attribute
-        List<Categorie> categories = categorieDAO.selectallCategories();
-        request.setAttribute("categories", categories);
-
-        // Forward to ProduitAdd.jsp
-        request.getRequestDispatcher("ProduitAdd.jsp").forward(request, response);
-    } else if ("ProduitEdit".equals(action) && idParam != null) {
-        try {
-            int productId = Integer.parseInt(idParam);
-            Produit produit = produitDAO.getProduitById(productId);
+        if ("ProduitAdd".equals(action)) {
             List<Categorie> categories = categorieDAO.selectallCategories();
-        	System.out.println("i'm invoked doget");
-            System.out.println("ID Parameter: " + idParam);
+            request.setAttribute("categories", categories);
 
-            if (produit != null) {
-                // Fetch the list of categories and set it as an attribute
+            // Assuming that you have predefined lists of taille and couleur options
+            List<String> tailleOptions = Arrays.asList("Small", "Medium", "Large");
+            List<String> couleurOptions = Arrays.asList("Red", "Blue", "Green");
 
-                // Set the product as an attribute
+            request.setAttribute("tailleOptions", tailleOptions);
+            request.setAttribute("couleurOptions", couleurOptions);
 
-                // Forward to ProduitEdit.jsp
-                request.setAttribute("produit", produit);
-                request.setAttribute("categories", categories); // Set the list of categories
-                request.getRequestDispatcher("ProduitEdit.jsp").forward(request, response);
+            // Forward to ProduitAdd.jsp
+            request.getRequestDispatcher("ProduitAdd.jsp").forward(request, response);
+        } else if ("ProduitEdit".equals(action) && idParam != null) {
+            try {
+                int productId = Integer.parseInt(idParam);
+                Produit produit = produitDAO.getProduitById(productId);
+                List<Categorie> categories = categorieDAO.selectallCategories();
+                
+                if (produit != null) {
+                    // Fetch the list of categories and set it as an attribute
+                    request.setAttribute("categories", categories);
 
-            } else {
-                // Handle case when product is not found
+                    // Set the product as an attribute
+                    request.setAttribute("produit", produit);
+
+                    // Assuming that you have predefined lists of taille and couleur options
+                    List<String> tailleOptions = Arrays.asList("Small", "Medium", "Large");
+                    List<String> couleurOptions = Arrays.asList("Red", "Blue", "Green");
+
+                    request.setAttribute("tailleOptions", tailleOptions);
+                    request.setAttribute("couleurOptions", couleurOptions);
+
+                    // Forward to ProduitEdit.jsp
+                    request.getRequestDispatcher("ProduitEdit.jsp").forward(request, response);
+
+                } else {
+                    // Handle case when product is not found
+                    response.sendRedirect("ProduitServlet?page=ProduitList");
+                }
+            } catch (NumberFormatException e) {
+                // Handle invalid ID parameter
                 response.sendRedirect("ProduitServlet?page=ProduitList");
             }
-        } catch (NumberFormatException e) {
-            // Handle invalid ID parameter
-            response.sendRedirect("ProduitServlet?page=ProduitList");
+        } else if ("search".equals(action) && searchQuery != null && !searchQuery.isEmpty()) {
+            // Search for products based on the search query
+            List<Produit> produits = produitDAO.searchProducts(searchQuery);
+            request.setAttribute("produits", produits);
+
+            // Forward to ProduitList.jsp to display the search results
+            request.getRequestDispatcher("ProduitList.jsp").forward(request, response);
         }
-    } else if ("search".equals(action) && searchQuery != null && !searchQuery.isEmpty()) {
-        // Search for products based on the search query
-        List<Produit> produits = produitDAO.searchProducts(searchQuery);
-        request.setAttribute("produits", produits);
+        else if ("filterByPrice".equals(action)) {
+            String minPriceStr = request.getParameter("minPrice");
+            String maxPriceStr = request.getParameter("maxPrice");
 
-        // Forward to ProduitList.jsp to display the search results
-        request.getRequestDispatcher("ProduitList.jsp").forward(request, response);}
-    
-//    }if ("filter".equals(action)) {
-//        // Fetch the list of available sizes from your database
-//        List<String> sizes = fetchAvailableSizesFromDatabase();
-//        request.setAttribute("sizes", sizes);
-//        
-//        // Perform the filtering based on selected size
-//        String selectedSize = request.getParameter("filterTaille");
-//        List<Produit> filteredProducts = filterProductsBySize(selectedSize);
-//        request.setAttribute("produits", filteredProducts);}
-    else {
-        // Fetch the list of produits and set it as an attribute
-        List<Produit> produits = produitDAO.getAllProduits();
-        request.setAttribute("produits", produits);
+            float minPrice = Float.parseFloat(minPriceStr);
+            float maxPrice = Float.parseFloat(maxPriceStr);
 
-        // Forward to ProduitList.jsp
-        request.getRequestDispatcher("ProduitList.jsp").forward(request, response);
+            List<Produit> produits = produitDAO.filterProduitsByPrice(minPrice, maxPrice);
+            request.setAttribute("produits", produits);
+
+            // Forward to TransactionList.jsp
+            request.getRequestDispatcher("ProduitList.jsp").forward(request, response);
+        }
+        else if ("filterByColor".equals(action)) {
+            List<String> couleurOptions = produitDAO.getDistinctColors();
+            System.out.println("Distinct Colors: " + couleurOptions);
+
+            request.setAttribute("couleurOptions", couleurOptions);
+
+            String[] selectedColorsArray = request.getParameterValues("color");
+            List<String> selectedColors = Arrays.asList(selectedColorsArray);
+
+            List<Produit> filteredProduits = produitDAO.filterProduitsByColor(selectedColors);
+
+            request.setAttribute("produits", filteredProduits);
+            request.getRequestDispatcher("ProduitList.jsp").forward(request, response);
+        }else if ("filterByTaille".equals(action)) {
+            List<String> tailleOptions = produitDAO.getDistinctTailles();
+            System.out.println("Distinct Tailles: " + tailleOptions);
+
+            request.setAttribute("tailleOptions", tailleOptions);
+
+            String[] selectedTaillesArray = request.getParameterValues("taille");
+            List<String> selectedTailles = Arrays.asList(selectedTaillesArray);
+
+            List<Produit> filteredProduits = produitDAO.filterProduitsByTaille(selectedTailles);
+
+            request.setAttribute("produits", filteredProduits);
+            request.getRequestDispatcher("ProduitList.jsp").forward(request, response);
+        }
+        else if ("filterByCategorie".equals(action)) {
+            int categoryId = Integer.parseInt(request.getParameter("categoryId"));
+            List<Produit> filteredProduits = produitDAO.filterProduitsByCategorie(categoryId);
+            request.setAttribute("produits", filteredProduits);
+            request.getRequestDispatcher("ProduitList.jsp").forward(request, response);
+        }
+
+        
+        else {
+            // Fetch the list of produits and set it as an attribute
+            List<Produit> produits = produitDAO.getAllProduits();
+            request.setAttribute("produits", produits);
+            List<String> couleurOptions = produitDAO.getDistinctColors();
+            request.setAttribute("couleurOptions", couleurOptions);
+            List<String> tailleOptions = produitDAO.getDistinctTailles();
+            request.setAttribute("tailleOptions", tailleOptions);
+            List<Categorie> categories = categorieDAO.selectallCategories();
+            request.setAttribute("categories", categories);
+            // Forward to ProduitList.jsp
+            request.getRequestDispatcher("ProduitList.jsp").forward(request, response);
+        }
     }
-}
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -106,20 +160,27 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response)
             String prodlib = request.getParameter("prodlib");
             String proddesc = request.getParameter("proddesc");
 
-            String tailleParam = request.getParameter("taille");
-            String couleurParam = request.getParameter("couleur");
-
-            List<String> taille = new ArrayList<>();
-            List<String> couleur = new ArrayList<>();
-
-            if (tailleParam != null && !tailleParam.isEmpty()) {
-                taille = Arrays.asList(tailleParam.split("\\s*,\\s*"));
+            String[] selectedTaillesArray = request.getParameterValues("taille");
+            String[] selectedCouleursArray = request.getParameterValues("couleur");
+            List<String> selectedTailles = Arrays.asList(selectedTaillesArray);
+            List<String> selectedCouleurs = Arrays.asList(selectedCouleursArray);
+            if (request.getParameter("tailleOther") != null) {
+                String tailleOtherValue = request.getParameter("tailleOtherValue");
+                if (!tailleOtherValue.isEmpty()) {
+                    List<String> newTailles = new ArrayList<>(selectedTailles);
+                    newTailles.add(tailleOtherValue);
+                    selectedTailles = newTailles;
+                }
             }
 
-            if (couleurParam != null && !couleurParam.isEmpty()) {
-                couleur = Arrays.asList(couleurParam.split("\\s*,\\s*"));
+            if (request.getParameter("couleurOther") != null) {
+                String couleurOtherValue = request.getParameter("couleurOtherValue");
+                if (!couleurOtherValue.isEmpty()) {
+                    List<String> newCouleurs = new ArrayList<>(selectedCouleurs);
+                    newCouleurs.add(couleurOtherValue);
+                    selectedCouleurs = newCouleurs;
+                }
             }
-
             float prodprix = Float.parseFloat(request.getParameter("prodprix"));
             int prodquant = Integer.parseInt(request.getParameter("prodquant"));
 
@@ -147,23 +208,39 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response)
             int prodcatId = Integer.parseInt(request.getParameter("prodcat"));
             Categorie categorie = categorieDAO.getCategoryById(prodcatId);
 
-            Produit produit = new Produit(prodlib, proddesc, prodprix, prodquant, imagefilename, taille, couleur,
+            Produit produit = new Produit(prodlib, proddesc, prodprix, prodquant, imagefilename, selectedTailles, selectedCouleurs,
                     categorie);
 
-            produitDAO.ajouterProduit(produit);
+            produitDAO.ajouterProduit(produit, selectedTailles, selectedCouleurs);
 
             response.sendRedirect("ProduitServlet?page=ProduitList");
         } else if ("update".equals(action)) {
-            try {
+        	try {
                 int prodId = Integer.parseInt(request.getParameter("id"));
                 String prodlib = request.getParameter("prodlib");
                 String proddesc = request.getParameter("proddesc");
-                String tailleParam = request.getParameter("taille");
-                String couleurParam = request.getParameter("couleur");
 
-                List<String> taille = Arrays.asList(tailleParam.split("\\s*,\\s*"));
-                List<String> couleur = Arrays.asList(couleurParam.split("\\s*,\\s*"));
+                String[] selectedTaillesArray = request.getParameterValues("taille");
+                String[] selectedCouleursArray = request.getParameterValues("couleur");
+                List<String> selectedTailles = Arrays.asList(selectedTaillesArray);
+                List<String> selectedCouleurs = Arrays.asList(selectedCouleursArray);
+                if (request.getParameter("tailleOther") != null) {
+                    String tailleOtherValue = request.getParameter("tailleOtherValue");
+                    if (!tailleOtherValue.isEmpty()) {
+                        List<String> newTailles = new ArrayList<>(selectedTailles);
+                        newTailles.add(tailleOtherValue);
+                        selectedTailles = newTailles;
+                    }
+                }
 
+                if (request.getParameter("couleurOther") != null) {
+                    String couleurOtherValue = request.getParameter("couleurOtherValue");
+                    if (!couleurOtherValue.isEmpty()) {
+                        List<String> newCouleurs = new ArrayList<>(selectedCouleurs);
+                        newCouleurs.add(couleurOtherValue);
+                        selectedCouleurs = newCouleurs;
+                    }
+                }
                 float prodprix = Float.parseFloat(request.getParameter("prodprix"));
                 int prodquant = Integer.parseInt(request.getParameter("prodquant"));
 
@@ -190,8 +267,8 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response)
                 int prodcatId = Integer.parseInt(request.getParameter("prodcat"));
                 Categorie categorie = categorieDAO.getCategoryById(prodcatId);
 
-                Produit produit = new Produit(prodId, prodlib, proddesc,imagefilename, prodprix, prodquant, taille, couleur, categorie);
-                produitDAO.modifierProduit(produit);
+                Produit produit = new Produit(prodId, prodlib, proddesc, imagefilename, prodprix, prodquant, selectedTailles, selectedCouleurs, categorie);
+                produitDAO.modifierProduit(produit, selectedTailles, selectedCouleurs);
 
                 response.sendRedirect("ProduitServlet?page=ProduitList");
             } catch (NumberFormatException e) {
@@ -208,8 +285,61 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response)
             request.setAttribute("produits", produits);
             request.getRequestDispatcher("ProduitList.jsp").forward(request, response);
         
-        } else {
+        }
+        else if ("filterByPrice".equals(action)) {
+        	try {
+                float minPrice = Float.parseFloat(request.getParameter("minPrice"));
+                float maxPrice = Float.parseFloat(request.getParameter("maxPrice"));
+                
+                List<Produit> filteredProduits = produitDAO.filterProduitsByPrice(minPrice, maxPrice);
+                
+                request.setAttribute("filteredProduits", filteredProduits);
+                // Forward to the same JSP for displaying the filtered results
+                request.getRequestDispatcher("ProduitList.jsp").forward(request, response);
+            } catch (NumberFormatException e) {
+                // Handle invalid input (minPrice or maxPrice not valid floats)
+                response.sendRedirect("ProduitServlet");
+            }}
+        else if ("filterByColor".equals(action)) {
+            List<String> couleurOptions = produitDAO.getDistinctColors();
+            System.out.println("Distinct Colors: " + couleurOptions);
+
+            request.setAttribute("couleurOptions", couleurOptions);
+
+            String[] selectedColorsArray = request.getParameterValues("color");
+            List<String> selectedColors = Arrays.asList(selectedColorsArray);
+
+            List<Produit> filteredProduits = produitDAO.filterProduitsByColor(selectedColors);
+
+            request.setAttribute("produits", filteredProduits); // Set the attribute name to "produits"
+            request.getRequestDispatcher("ProduitList.jsp").forward(request, response);
+        }
+        else if ("filterByTaille".equals(action)) {
+            List<String> tailleOptions = produitDAO.getDistinctTailles();
+            System.out.println("Distinct tailles: " + tailleOptions);
+
+            request.setAttribute("tailleOptions", tailleOptions);
+
+            String[] selectedTaillesArray = request.getParameterValues("taille");
+            List<String> selectedTailles = Arrays.asList(selectedTaillesArray);
+
+            List<Produit> filteredProduits = produitDAO.filterProduitsByTaille(selectedTailles);
+
+            request.setAttribute("produits", filteredProduits); // Set the attribute name to "produits"
+            request.getRequestDispatcher("ProduitList.jsp").forward(request, response);
+        }
+        else if ("filterByCategorie".equals(action)) {
+            int categoryId = Integer.parseInt(request.getParameter("categoryId"));
+            List<Produit> filteredProduits = produitDAO.filterProduitsByCategorie(categoryId);
+            request.setAttribute("produits", filteredProduits);
+            
+            request.getRequestDispatcher("ProduitList.jsp").forward(request, response);
+        }
+        else {
+
             response.sendRedirect("ProduitServlet");
         }
     }
+    
+    
 }

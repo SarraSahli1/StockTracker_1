@@ -78,6 +78,38 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response)
         request.setAttribute("transactions", transactions);
         request.getRequestDispatcher("TransactionList.jsp").forward(request, response);
     } 
+    else if ("filterByPrice".equals(action)) {
+        String minPriceStr = request.getParameter("minPrice");
+        String maxPriceStr = request.getParameter("maxPrice");
+
+        float minPrice = Float.parseFloat(minPriceStr);
+        float maxPrice = Float.parseFloat(maxPriceStr);
+
+        List<Transaction> transactions = tdao.filterTransactionsByPrice(minPrice, maxPrice);
+        request.setAttribute("transactions", transactions);
+
+        // Forward to TransactionList.jsp
+        request.getRequestDispatcher("TransactionList.jsp").forward(request, response);
+    }
+    else if ("filterByDate".equals(action)) {
+        try {
+            String startDateStr = request.getParameter("startDate");
+            String endDateStr = request.getParameter("endDate");
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            Date startDate = new Date(dateFormat.parse(startDateStr).getTime());
+            Date endDate = new Date(dateFormat.parse(endDateStr).getTime());
+
+            List<Transaction> transactions = tdao.filterTransactionsByDate(startDate, endDate);
+            request.setAttribute("transactions", transactions);
+
+            // Forward to TransactionList.jsp
+            request.getRequestDispatcher("TransactionList.jsp").forward(request, response);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            // Handle the parsing error as needed
+        }
+    }
     else {
         // Fetch the list of transactions and set it as an attribute
         List<Transaction> transactions = tdao.selectAllTransactions();
@@ -175,8 +207,39 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response)
 
             // Redirect the user back to the list of transactions or display a success message
             response.sendRedirect("TransactionServlet?page=TransactionList");
-        }else {
-            response.sendRedirect("TransactionServlet");
         }
+        else if ("filterByPrice".equals(action)) {
+        	try {
+                float minPrice = Float.parseFloat(request.getParameter("minPrice"));
+                float maxPrice = Float.parseFloat(request.getParameter("maxPrice"));
+                
+                List<Transaction> filteredTransactions = tdao.filterTransactionsByPrice(minPrice, maxPrice);
+                
+                request.setAttribute("filteredTransactions", filteredTransactions);
+                // Forward to the same JSP for displaying the filtered results
+                request.getRequestDispatcher("TransactionList.jsp").forward(request, response);
+            } catch (NumberFormatException e) {
+                // Handle invalid input (minPrice or maxPrice not valid floats)
+                response.sendRedirect("TransactionServlet");
+            }
     }
-}
+        else if ("filterByDate".equals(action)) {
+            try {
+                String startDateStr = request.getParameter("startDate");
+                String endDateStr = request.getParameter("endDate");
+
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                Date startDate = new Date(dateFormat.parse(startDateStr).getTime());
+                Date endDate = new Date(dateFormat.parse(endDateStr).getTime());
+
+                List<Transaction> filteredTransactions = tdao.filterTransactionsByDate(startDate, endDate);
+                request.setAttribute("filteredTransactions", filteredTransactions);
+
+                // Forward to the same JSP for displaying the filtered results
+                request.getRequestDispatcher("TransactionList.jsp").forward(request, response);
+            } catch (ParseException e) {
+                e.printStackTrace();
+                // Handle the parsing error as needed
+            }
+        
+}}}
